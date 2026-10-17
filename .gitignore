@@ -1,20 +1,3 @@
-# Python Virtual Environments
-venv/
-.venv/
-env/
-ENV/
-
-# Byte-compiled / optimized files
-__pycache__/
-*.py[cod]
-*$py.class
-
-# Temporary scratch & test artifacts
-scratch/
-*.log
-
-# Editor & OS artifacts
-.vscode/
-.idea/
+# OS artifacts
 .DS_Store
 Thumbs.db

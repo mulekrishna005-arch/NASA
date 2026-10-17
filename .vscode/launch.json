@@ -1,0 +1,44 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Launch Full-Stack System (run.py)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/run.py",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "Debug Backend Server (server.py)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/backend/server.py",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}/backend",
+      "envFile": "${workspaceFolder}/.env"
+    },
+    {
+      "name": "Run Model Pipeline (Pure NumPy Engine)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/backend/model_pipeline.py",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}/backend",
+      "envFile": "${workspaceFolder}/.env"
+    },
+    {
+      "name": "Run Model Pipeline (Sync Live NASA FIRMS)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/backend/model_pipeline.py",
+      "args": [
+        "--sensor", "VIIRS_NOAA21_NRT",
+        "--save"
+      ],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}/backend",
+      "envFile": "${workspaceFolder}/.env"
+    }
+  ]
+}
