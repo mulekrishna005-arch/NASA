@@ -1,0 +1,1500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NASA | LANCE | FIRMS — Fire Information for Resource Management System</title>
+  <meta name="description" content="Global Near Real-Time Active Fire and Thermal Anomaly Map & Next-Day Prediction System using NASA FIRMS (VIIRS 375m & MODIS), GPM, MERRA-2, and SRTM data.">
+  
+  <!-- Google Fonts: Titillium Web, Inter, Orbitron, JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Titillium+Web:wght@300;400;600;700&family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  
+  <!-- Leaflet CSS for Interactive Geospatial Map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  
+  <!-- Custom NASA FIRMS Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="firms-app-body">
+
+  <!-- Global SVG Definitions for Fire Gradients -->
+  <svg width="0" height="0" style="position:absolute; width:0; height:0; overflow:hidden;" aria-hidden="true">
+    <defs>
+      <linearGradient id="flameGradOuter" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#FF5252" />
+        <stop offset="40%" stop-color="#FF1744" />
+        <stop offset="100%" stop-color="#D50000" />
+      </linearGradient>
+    </defs>
+  </svg>
+
+  <!-- NASA FIRMS Application Container -->
+  <div class="firms-viewport-container">
+
+    <!-- Top NASA | LANCE | FIRMS Header Navigation Bar -->
+    <header class="firms-header">
+      <div class="firms-brand">
+        <div class="nasa-logo-mark">
+          <svg viewBox="0 0 100 100" class="meatball-svg" aria-label="NASA Logo">
+            <circle cx="50" cy="50" r="48" fill="#0B3D91"/>
+            <path d="M 20,78 Q 55,20 85,25 Q 75,55 35,70 Z" fill="#FC3D21" opacity="0.95"/>
+            <ellipse cx="50" cy="50" rx="42" ry="16" fill="none" stroke="#FFFFFF" stroke-width="2.5" transform="rotate(-30 50 50)"/>
+            <circle cx="32" cy="35" r="1.5" fill="#FFF"/>
+            <circle cx="68" cy="38" r="1.5" fill="#FFF"/>
+            <circle cx="45" cy="22" r="1.2" fill="#FFF"/>
+            <circle cx="75" cy="65" r="1.5" fill="#FFF"/>
+            <circle cx="28" cy="60" r="1" fill="#FFF"/>
+            <text x="50" y="58" font-family="'Orbitron', sans-serif" font-weight="900" font-size="18" fill="#FFFFFF" text-anchor="middle" letter-spacing="2">NASA</text>
+          </svg>
+        </div>
+        <div class="brand-text-group">
+          <div class="agency-title">
+            <span class="agency-highlight">NASA</span> &bull; 
+            <span class="agency-sub">LANCE</span> &bull; 
+            <span class="agency-firms">FIRMS</span>
+          </div>
+          <h1 class="main-heading">Fire Information for Resource Management System</h1>
+        </div>
+      </div>
+
+      <!-- Time Range Selection Pills (Directly maps to #d:24hrs reference) -->
+      <div class="firms-time-controls" role="group" aria-label="FIRMS Time Range Filter">
+        <span class="time-label">RANGE:</span>
+        <button class="time-pill" data-range="today">Today</button>
+        <button class="time-pill active" data-range="24hrs" id="time-pill-24h">24 hrs</button>
+        <button class="time-pill" data-range="48hrs">48 hrs</button>
+        <button class="time-pill" data-range="7days">7 days</button>
+      </div>
+
+      <!-- Global Country & Multi-Source Selector (NASA FIRMS / Worldview / Copernicus) -->
+      <div class="firms-country-picker-wrap">
+        <label for="firms-country-select" class="country-picker-lbl">🌍 COUNTRY:</label>
+        <select id="firms-country-select" class="firms-country-select" title="Select Country or Default (Neutral Earth - No Hotspots)">
+          <option value="DEFAULT" selected>🌐 Default (Neutral Earth - No Hotspots)</option>
+          <option value="IND">🇮🇳 India (Subcontinent)</option>
+          <option value="USA">🇺🇸 United States of America</option>
+          <option value="CAN">🇨🇦 Canada (Boreal Taiga)</option>
+          <option value="BRA">🇧🇷 Brazil (Amazon &amp; Pantanal)</option>
+          <option value="AUS">🇦🇺 Australia (Bush &amp; Alpine)</option>
+          <option value="IDN">🇮🇩 Indonesia (Tropical Peatland)</option>
+          <option value="ESP">🇪🇸 Spain (Iberian Peninsula)</option>
+          <option value="PRT">🇵🇹 Portugal (Pedrógão Grande)</option>
+          <option value="GRC">🇬🇷 Greece (Attica &amp; Islands)</option>
+          <option value="ITA">🇮🇹 Italy (Sicily &amp; Calabria)</option>
+          <option value="FRA">🇫🇷 France (Gironde &amp; Var)</option>
+          <option value="RUS">🇷🇺 Russian Federation (Siberia)</option>
+          <option value="CHL">🇨🇱 Chile (Biobío Plantation)</option>
+          <option value="ARG">🇦🇷 Argentina (Corrientes &amp; Sierras)</option>
+          <option value="ZAF">🇿🇦 South Africa (Cape Fynbos)</option>
+          <option value="COD">🇨🇩 DR Congo (Katanga Savanna)</option>
+          <option value="AGO">🇦🇴 Angola (Miombo Woodland)</option>
+          <option value="MEX">🇲🇽 Mexico (Sierra Madre)</option>
+          <option value="TUR">🇹🇷 Turkey (Antalya Coast)</option>
+          <option value="DZA">🇩🇿 Algeria (Atlas &amp; Kabylie)</option>
+          <option value="COL">🇨🇴 Colombia (Llanos &amp; Amazon)</option>
+          <option value="THA">🇹🇭 Thailand (Chiang Mai Highlands)</option>
+          <option value="VNM">🇻🇳 Vietnam (Central Highlands)</option>
+          <option value="PHL">🇵🇭 Philippines (Cordillera &amp; Grasslands)</option>
+          <option value="KEN">🇰🇪 Kenya (Rift Valley)</option>
+          <option value="DEU">🇩🇪 Germany (Brandenburg)</option>
+          <option value="GBR">🇬🇧 United Kingdom (Moorlands)</option>
+          <option value="JPN">🇯🇵 Japan (Wildlands &amp; Alpine)</option>
+        </select>
+      </div>
+
+      <!-- Dedicated Region / State / Fire Basin Selector -->
+      <div class="firms-region-picker-wrap">
+        <label for="firms-region-select" class="region-picker-lbl">📍 REGION:</label>
+        <select id="firms-region-select" class="firms-region-select" title="Select Specific Fire Risk Region or Default">
+          <option value="DEFAULT" selected>🌐 Default (No Active Region)</option>
+          <option value="USA-CA">California Sierra Nevada Foothills</option>
+          <option value="USA-PNW">Pacific Northwest Cascades (OR/WA)</option>
+          <option value="USA-SOCAL">Southern California Chaparral</option>
+          <option value="USA-ROCKY">Rocky Mountains &amp; Intermountain West</option>
+          <option value="USA-TEXAS">Texas Panhandle &amp; Edwards Plateau</option>
+          <option value="USA-FLORIDA">Florida Pine Flatwoods &amp; Everglades</option>
+          <option value="USA-SW">Southwest Mogollon Rim &amp; Tonto (AZ/NM)</option>
+        </select>
+      </div>
+
+      <!-- Multi-Agency Direct Link Badges -->
+      <div class="agency-badges-group">
+        <a href="https://firms.modaps.eosdis.nasa.gov/active_fire" target="_blank" class="agency-badge firms" title="NASA FIRMS Global Active Fire Data">🔥 FIRMS</a>
+        <a href="https://worldview.earthdata.nasa.gov/" target="_blank" class="agency-badge worldview" title="NASA Worldview Global Imagery &amp; Cloud Obscuration">🛰️ Worldview</a>
+        <a href="https://dataspace.copernicus.eu/" target="_blank" class="agency-badge copernicus" title="Copernicus Data Space Ecosystem (Sentinel-2 SWIR &amp; Vegetation)">🇪🇺 Copernicus</a>
+      </div>
+
+      <!-- Live Coordinate & Zoom HUD Readout -->
+      <div class="firms-coord-readout" id="firms-live-coords" title="Live Map Cursor / Center Coordinates">
+        <span class="coord-val">83.30° E, 1.50° N</span>
+        <span class="coord-zoom">Zoom: 3.2z</span>
+      </div>
+
+      <!-- Header Tools & Actions -->
+      <div class="firms-header-actions">
+        <!-- Autonomous AI Wildfire Prediction Agent Trigger -->
+        <button id="btn-toggle-agent" class="btn-firms-action btn-agent-header" title="Toggle Copernicus &amp; NASA AI Wildfire Prediction Agent">
+          <span class="agent-beacon-dot"></span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2 2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><rect x="4" y="8" width="16" height="12" rx="2"/><circle cx="9" cy="13" r="1.5"/><circle cx="15" cy="13" r="1.5"/><path d="M9 17h6"/></svg>
+          <span>🤖 AI Agent</span>
+        </button>
+
+        <!-- Emergency Numbers & Extreme Fire Call Dispatch Registry -->
+        <button id="btn-open-emergency-mgr" class="btn-firms-action btn-emergency-header" title="Manage Country Emergency Dispatch Numbers &amp; Automated Fire Reports">
+          <span class="emergency-beacon-dot"></span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          <span>🚨 Emergency Numbers</span>
+          <span class="badge-count" id="emergency-contact-count-badge">1</span>
+        </button>
+
+        <!-- Backend API Status Indicator -->
+        <div class="telemetry-item" id="backend-status-item" title="Python Backend Service Status">
+          <span class="label">BACKEND:</span>
+          <span class="val cyan" id="backend-status-badge"><span class="status-dot"></span> Checking...</span>
+        </div>
+
+        <!-- Satellite Sync Badge -->
+        <div class="telemetry-item header-sensor-chip" title="Active NASA Satellite Sensor">
+          <span class="label">SENSOR:</span>
+          <span class="val pulse-green"><span class="status-dot"></span> NOAA-21 / VIIRS 375m</span>
+        </div>
+
+        <!-- Refresh / Retrain Pipeline Button -->
+        <button id="retrain-model-btn" class="btn-firms-action btn-retrain" title="Trigger Full ML Retraining & FIRMS Satellite Sync">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+          <span>Retrain Model</span>
+        </button>
+
+        <!-- Refresh Button -->
+        <button id="refresh-data-btn" class="btn-icon" title="Refresh Live Calculations & Forecasts">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+        </button>
+
+        <!-- Configure Live Key Button -->
+        <button id="open-api-key-btn" class="btn-firms-action btn-api-key" title="Configure Live NASA FIRMS API Key">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 2l-2 2m-1.5 1.5L16 7l-2-2m-2 2l-2-2m-2 2L4 15a5.5 5.5 0 0 0 8 8l7-7-2-2z"/></svg>
+          <span>Live NASA Key</span>
+        </button>
+
+        <!-- Scientist Methodology Button -->
+        <button id="open-methodology-btn" class="btn-icon-subtle" title="View NASA Methodology & Disclaimers">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Geospatial Work Area -->
+    <main class="firms-main-workarea">
+
+      <!-- Full-Viewport Interactive Leaflet Map Container -->
+      <div id="leaflet-map" class="firms-map-canvas"></div>
+
+      <!-- Map Floating Action Buttons (Zoom In, Zoom Out, Scan Viewport, Basemap, Home, Focus, HUD) -->
+      <div class="firms-map-quick-tools">
+        <!-- Dedicated Zoom In and Zoom Out Options -->
+        <button id="btn-map-zoom-in" class="firms-tool-btn" title="Zoom In (+)" aria-label="Zoom In Map">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+        <button id="btn-map-zoom-out" class="firms-tool-btn" title="Zoom Out (-)" aria-label="Zoom Out Map">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+
+        <button id="btn-map-scan" class="firms-tool-btn btn-highlight-pulse" title="Scan Real-World Active Fires in Current Viewport">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 10 10"/><path d="M12 12l7-7"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1"/></svg>
+        </button>
+        <button id="btn-map-basemap-toggle" class="firms-tool-btn" title="Toggle Real-World Satellite Photography vs Dark Matter">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        </button>
+        <button id="btn-map-home" class="firms-tool-btn" title="Home: Return to Indian Ocean &amp; Global Reference (@83.3, 1.5, 3.2z)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </button>
+        <button id="btn-map-zoom-california" class="firms-tool-btn" title="Focus High-Res Active California Sierra Basin">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/></svg>
+        </button>
+        <button id="btn-toggle-hud" class="firms-tool-btn" title="Toggle Fire Inspector HUD">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+        <button id="btn-map-emergency" class="firms-tool-btn btn-highlight-red" title="🚨 Emergency Numbers &amp; Automated Call Dispatch Console" aria-label="Emergency Numbers">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        </button>
+      </div>
+
+      <!-- Live Satellite Scanning Indicator Overlay Pill -->
+      <div id="firms-scan-pill" class="firms-scan-pill" style="display: none;">
+        <span class="scan-radar-dot"></span>
+        <span id="firms-scan-msg">Scanning Real-World NOAA-21 Satellite Passes...</span>
+      </div>
+
+      <!-- Real-Time CartoDB Dark Matter Live Telemetry Ribbon -->
+      <div id="cartodb-realtime-badge" class="cartodb-realtime-hud" title="CartoDB Dark Matter Real-Time Earth & Orbital Synchronization Active">
+        <span class="live-radar-dot"></span>
+        <strong class="hud-stream-title">CARTO DB DARK MATTER: REAL-TIME LIVE MAP</strong>
+        <span class="hud-stream-sep">&bull;</span>
+        <span id="cartodb-hud-time" class="hud-stream-time">LIVE UTC</span>
+        <span class="hud-stream-sep">&bull;</span>
+        <span class="hud-stream-status"><span class="pulse-dot green"></span> SOLAR TERMINATOR: LIVE</span>
+        <span class="hud-stream-sep">&bull;</span>
+        <span class="hud-stream-status"><span class="pulse-dot cyan"></span> RADAR STREAM: ACTIVE</span>
+      </div>
+
+      <!-- Collapsible Left Sidebar (NASA FIRMS Style GIS Drawer) -->
+      <aside class="firms-sidebar" id="firms-sidebar">
+        <!-- Sidebar Collapse / Expand Toggle Button -->
+        <button class="firms-sidebar-toggle" id="sidebar-toggle-btn" title="Collapse / Expand FIRMS Layers Drawer" aria-label="Toggle Sidebar">
+          <span class="toggle-icon">&laquo;</span>
+        </button>
+
+        <div class="sidebar-inner-scroll">
+          <!-- Sidebar Navigation Tabs -->
+          <div class="sidebar-tabs" role="tablist">
+            <button class="tab-btn active" data-tab="tab-fires">🔥 Fires</button>
+            <button class="tab-btn" data-tab="tab-basemaps">🗺️ Basemaps</button>
+            <button class="tab-btn" data-tab="tab-overlays">🌲 Overlays</button>
+            <button class="tab-btn" data-tab="tab-sensors">🛰️ Constellation</button>
+            <button class="tab-btn" data-tab="tab-emergency" id="tab-btn-emergency">🚨 Emergency</button>
+          </div>
+
+          <!-- Tab 1: Active Fires & Sensors -->
+          <div class="tab-content active" id="tab-fires">
+            <!-- Region Selection & Targeted Fire Basin Focus Card -->
+            <div class="drawer-section region-focus-section">
+              <div class="section-title-row">
+                <h3 class="section-title">📍 Region / Fire Basin Selection</h3>
+                <span class="region-badge-pill" id="sb-active-region-badge">ACTIVE REGION</span>
+              </div>
+              <p class="section-desc">Select specific territorial fire zone for high-res orbital targeting &amp; AI prediction:</p>
+              
+              <div class="sidebar-region-picker-wrap">
+                <select id="sidebar-region-select" class="sidebar-region-select" title="Switch Region to focus map, satellite passes, and prediction telemetry">
+                  <option value="DEFAULT" selected>🌐 Default (No Active Region)</option>
+                  <option value="USA-CA">California Sierra Nevada Foothills</option>
+                  <option value="USA-PNW">Pacific Northwest Cascades (OR/WA)</option>
+                  <option value="USA-SOCAL">Southern California Chaparral</option>
+                  <option value="USA-ROCKY">Rocky Mountains &amp; Intermountain West</option>
+                  <option value="USA-TEXAS">Texas Panhandle &amp; Edwards Plateau</option>
+                  <option value="USA-FLORIDA">Florida Pine Flatwoods &amp; Everglades</option>
+                  <option value="USA-SW">Southwest Mogollon Rim &amp; Tonto (AZ/NM)</option>
+                </select>
+              </div>
+
+              <div class="region-telemetry-pill" id="sb-region-telemetry-pill">
+                <div class="reg-tel-row">
+                  <span class="reg-tel-lbl">Coordinates:</span>
+                  <span class="reg-tel-val cyan" id="sb-region-coords">39.7600° N, 121.4200° W</span>
+                </div>
+                <div class="reg-tel-row">
+                  <span class="reg-tel-lbl">Target BBox:</span>
+                  <span class="reg-tel-val" id="sb-region-bbox">-124.5, 37.5, -119.5, 41.5</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="drawer-section">
+              <h3 class="section-title">Satellite Active Fire Detections</h3>
+              <p class="section-desc">Thermal anomaly pixels detected within selected time range.</p>
+
+              <div class="layer-item">
+                <label class="custom-checkbox">
+                  <input type="checkbox" id="layer-chk-noaa21" checked data-sensor-key="VIIRS_NOAA21_NRT">
+                  <span class="chk-box"></span>
+                  <span class="layer-label">
+                    <strong class="color-noaa21">&bull; NOAA-21 / VIIRS 375m</strong>
+                    <span class="sub">JPSS-2 High-Resolution Nadir</span>
+                  </span>
+                </label>
+                <span class="pixel-count-badge" id="badge-noaa21-count">39 Live</span>
+              </div>
+
+              <div class="layer-item">
+                <label class="custom-checkbox">
+                  <input type="checkbox" id="layer-chk-noaa20" data-sensor-key="VIIRS_NOAA20_NRT">
+                  <span class="chk-box"></span>
+                  <span class="layer-label">
+                    <strong class="color-noaa20">&bull; NOAA-20 / VIIRS 375m</strong>
+                    <span class="sub">JPSS-1 50-minute Orbit Separation</span>
+                  </span>
+                </label>
+                <span class="pixel-count-badge">Ready</span>
+              </div>
+
+              <div class="layer-item">
+                <label class="custom-checkbox">
+                  <input type="checkbox" id="layer-chk-suomi" data-sensor-key="VIIRS_SNPP_NRT">
+                  <span class="chk-box"></span>
+                  <span class="layer-label">
+                    <strong class="color-suomi">&bull; Suomi-NPP / VIIRS 375m</strong>
+                    <span class="sub">Afternoon 13:30 Overpass</span>
+                  </span>
+                </label>
+                <span class="pixel-count-badge">Ready</span>
+              </div>
+
+              <div class="layer-item">
+                <label class="custom-checkbox">
+                  <input type="checkbox" id="layer-chk-modis" data-sensor-key="MODIS_NRT">
+                  <span class="chk-box"></span>
+                  <span class="layer-label">
+                    <strong class="color-modis">&bull; MODIS (Terra &amp; Aqua 1km)</strong>
+                    <span class="sub">24-Year Baseline Thermal Archive</span>
+                  </span>
+                </label>
+                <span class="pixel-count-badge">Archive</span>
+              </div>
+            </div>
+
+            <!-- NASA FIRMS Fire Radiative Power (FRP) Legend -->
+            <div class="drawer-section">
+              <h3 class="section-title">Fire Radiative Power (FRP)</h3>
+              <div class="firms-legend-scale">
+                <div class="legend-scale-row">
+                  <span class="legend-swatch low"></span>
+                  <span class="swatch-label">Low (&lt; 10 MW)</span>
+                </div>
+                <div class="legend-scale-row">
+                  <span class="legend-swatch medium"></span>
+                  <span class="swatch-label">Moderate (10 &ndash; 50 MW)</span>
+                </div>
+                <div class="legend-scale-row">
+                  <span class="legend-swatch high"></span>
+                  <span class="swatch-label">High (50 &ndash; 250 MW)</span>
+                </div>
+                <div class="legend-scale-row">
+                  <span class="legend-swatch extreme"></span>
+                  <span class="swatch-label">Extreme (&gt; 250 MW)</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Live Telemetry Quick Stats -->
+            <div class="drawer-section">
+              <h3 class="section-title">Live Sensor Summary</h3>
+              <div class="sidebar-stats-grid">
+                <div class="s-stat">
+                  <span class="s-label">Active Pixels</span>
+                  <span class="s-val cyan" id="sb-fire-count">39</span>
+                </div>
+                <div class="s-stat">
+                  <span class="s-label">Total FRP</span>
+                  <span class="s-val red" id="sb-total-frp">48.7 MW</span>
+                </div>
+                <div class="s-stat">
+                  <span class="s-label">Peak Radiance</span>
+                  <span class="s-val orange" id="sb-peak-temp">319.8 K</span>
+                </div>
+                <div class="s-stat">
+                  <span class="s-label">Resolution</span>
+                  <span class="s-val highlight">375m I-Band</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab 2: Basemaps -->
+          <div class="tab-content" id="tab-basemaps">
+            <div class="drawer-section">
+              <h3 class="section-title">NASA &amp; Earth Observation Basemaps</h3>
+              
+              <!-- Real-Time Satellite Tile Synchronization Bar -->
+              <div class="basemap-sync-bar">
+                <span class="live-radar-dot"></span>
+                <span class="sync-title">REAL-TIME TILE STREAM:</span>
+                <span class="sync-time" id="basemap-utc-now">LIVE UTC</span>
+              </div>
+
+              <div class="basemap-radio-group">
+                <!-- CartoDB Dark Matter with Real-Time Feed Indicator -->
+                <label class="basemap-option active">
+                  <input type="radio" name="firms-basemap" value="dark" checked>
+                  <span class="radio-card">
+                    <span class="radio-title-row">
+                      <span class="radio-title">CartoDB Dark Matter (Real-Time Live Map)</span>
+                      <span class="live-tag cyan"><span class="pulse-dot"></span> REAL-TIME ACTIVE</span>
+                    </span>
+                    <span class="radio-desc">High-contrast nocturnal geospatial map synchronized in real time with Day/Night Solar Terminator &amp; Live Radar</span>
+                    <span class="radio-feed-telemetry">
+                      <span>Stream: Real-time Live WebGL</span> &bull; 
+                      <span id="clock-cartodb" class="stream-clock">LIVE (UTC)</span>
+                    </span>
+                    <div class="cartodb-realtime-subcontrols">
+                      <label class="mini-live-chk" title="Real-time astronomical Day/Night terminator based on current solar altitude">
+                        <input type="checkbox" id="chk-dark-terminator" checked>
+                        <span>☀️ Real-Time Solar Day/Night Terminator</span>
+                      </label>
+                      <label class="mini-live-chk" title="Live meteorological weather radar and satellite cloud stream">
+                        <input type="checkbox" id="chk-dark-radar" checked>
+                        <span>🛰️ Live Weather Radar &amp; Cloud Stream</span>
+                      </label>
+                      <label class="mini-live-chk" title="60-second automatic polling of real-time NASA FIRMS satellite fire passes">
+                        <input type="checkbox" id="chk-dark-autosync" checked>
+                        <span>🔄 60s Auto-Sync Satellite Hotspots</span>
+                      </label>
+                    </div>
+                  </span>
+                </label>
+
+                <label class="basemap-option">
+                  <input type="radio" name="firms-basemap" value="satellite">
+                  <span class="radio-card">
+                    <span class="radio-title-row">
+                      <span class="radio-title">ESRI World Imagery (Satellite)</span>
+                      <span class="live-tag"><span class="pulse-dot green"></span> OPTICAL</span>
+                    </span>
+                    <span class="radio-desc">High-resolution optical satellite surface photography</span>
+                    <span class="radio-feed-telemetry">
+                      <span>Resolution: Sub-meter Aerial/Orbital</span>
+                    </span>
+                  </span>
+                </label>
+
+                <!-- NASA Night Lights (Black Marble) with Real-Time NASA GIBS Feed -->
+                <label class="basemap-option">
+                  <input type="radio" name="firms-basemap" value="nightlights">
+                  <span class="radio-card">
+                    <span class="radio-title-row">
+                      <span class="radio-title">NASA Night Lights (Black Marble)</span>
+                      <span class="live-tag orange"><span class="pulse-dot"></span> NASA GIBS</span>
+                    </span>
+                    <span class="radio-desc">VIIRS Day/Night Band (DNB) nocturnal lights, city emissions &amp; burning flares</span>
+                    <span class="radio-feed-telemetry">
+                      <span>NASA GIBS Real-Time Feed</span> &bull; 
+                      <span id="clock-nightlights" class="stream-clock">LIVE (UTC)</span>
+                    </span>
+                  </span>
+                </label>
+
+                <label class="basemap-option">
+                  <input type="radio" name="firms-basemap" value="topo">
+                  <span class="radio-card">
+                    <span class="radio-title-row">
+                      <span class="radio-title">OpenStreetMap Topo</span>
+                      <span class="live-tag">CONTOUR</span>
+                    </span>
+                    <span class="radio-desc">Topographic contours, roads, and administrative boundaries</span>
+                  </span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab 3: Environmental & Weather Overlays -->
+          <div class="tab-content" id="tab-overlays">
+            <div class="drawer-section">
+              <h3 class="section-title">NASA Worldview &amp; Copernicus Data Space Layers</h3>
+
+              <div class="layer-item">
+                <label class="custom-checkbox">
+                  <input type="checkbox" id="overlay-chk-worldview-clouds" class="layer-btn" data-layer="worldview-clouds" checked>
+                  <span class="chk-box"></span>
+                  <span class="layer-label">
+                    <strong>☁️ Worldview Cloud Optical Depth</strong>
+                    <span class="sub">NASA Worldview cloud penetration &amp; obscuration layer</span>
+                  </span>
+                </label>
+              </div>
+
+              <div class="layer-item">
+                <label class="custom-checkbox">
+                  <input type="checkbox" id="overlay-chk-oxygen" class="layer-btn" data-layer="oxygen" checked>
+                  <span class="chk-box"></span>
+                  <span class="layer-label">
+                    <strong>⛰️ Barometric Oxygen Level (pO2)</strong>
+                    <span class="sub">Combustion oxidizer availability: 16 - 21 kPa</span>
+                  </span>
+                </label>
+              </div>
+
+              <div class="layer-item">
+                <label class="custom-checkbox">
+                  <input type="checkbox" id="overlay-chk-ndvi" class="layer-btn" data-layer="ndvi" checked>
+                  <span class="chk-box"></span>
+                  <span class="layer-label">
+                    <strong>🌲 Copernicus Sentinel-2 NDVI</strong>
+                    <span class="sub">Vegetation fuel curing &amp; volatile dry kindling index</span>
+                  </span>
+                </label>
+              </div>
+
+              <div class="layer-item">
+                <label class="custom-checkbox">
+                  <input type="checkbox" id="overlay-chk-copernicus-swir" class="layer-btn" data-layer="copernicus-swir">
+                  <span class="chk-box"></span>
+                  <span class="layer-label">
+                    <strong>🛰️ Copernicus Sentinel-2 SWIR (2.2μm)</strong>
+                    <span class="sub">Short-Wave Infrared fire penetration through smoke/haze</span>
+                  </span>
+                </label>
+              </div>
+
+              <div class="layer-item">
+                <label class="custom-checkbox">
+                  <input type="checkbox" id="overlay-chk-copernicus-smoke" class="layer-btn" data-layer="copernicus-smoke">
+                  <span class="chk-box"></span>
+                  <span class="layer-label">
+                    <strong>💨 Copernicus Sentinel-5P TROPOMI</strong>
+                    <span class="sub">Atmospheric Carbon Monoxide &amp; Aerosol Index</span>
+                  </span>
+                </label>
+              </div>
+
+              <div class="layer-item">
+                <label class="custom-checkbox">
+                  <input type="checkbox" id="overlay-chk-slope" class="layer-btn" data-layer="slope">
+                  <span class="chk-box"></span>
+                  <span class="layer-label">
+                    <strong>⛰️ SRTM 30m Steep Slope</strong>
+                    <span class="sub">Canyon chimneys &gt; 20° slope acceleration</span>
+                  </span>
+                </label>
+              </div>
+
+              <div class="layer-item">
+                <label class="custom-checkbox">
+                  <input type="checkbox" id="overlay-chk-weather" class="layer-btn" data-layer="weather">
+                  <span class="chk-box"></span>
+                  <span class="layer-label">
+                    <strong>💧 MERRA-2 Humidity Contours</strong>
+                    <span class="sub">2m Relative Humidity &amp; atmospheric dryness</span>
+                  </span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab 4: Satellite Constellation -->
+          <div class="tab-content" id="tab-sensors">
+            <div class="drawer-section">
+              <h3 class="section-title">Sensor Constellation Registry</h3>
+              
+              <div class="mini-sensor-list">
+                <div class="mini-sensor-card active" data-sensor="VIIRS_NOAA21_NRT">
+                  <div class="m-title">🛰️ NOAA-21 (JPSS-2) VIIRS 375m</div>
+                  <div class="m-meta">Band I4 (3.74 μm) &bull; Primary Active Fire</div>
+                </div>
+
+                <div class="mini-sensor-card" data-sensor="VIIRS_SNPP_NRT">
+                  <div class="m-title">🛰️ Suomi-NPP VIIRS 375m</div>
+                  <div class="m-meta">Band I4 / I5 &bull; Afternoon Peak Heating</div>
+                </div>
+
+                <div class="mini-sensor-card" data-sensor="MODIS_NRT">
+                  <div class="m-title">🛰️ Terra &amp; Aqua MODIS (MOD14)</div>
+                  <div class="m-meta">1km Nadir Footprint &bull; Baseline Archive</div>
+                </div>
+
+                <div class="mini-sensor-card" data-sensor="GPM_IMERG">
+                  <div class="m-title">🛰️ GPM IMERG Precipitation</div>
+                  <div class="m-meta">0.1° Gridded Precipitation Accumulation</div>
+                </div>
+
+                <div class="mini-sensor-card" data-sensor="SRTM_DEM">
+                  <div class="m-title">🛰️ SRTM 30m Radar Topography</div>
+                  <div class="m-meta">Shaded Relief &bull; Oxygen Barometric Field</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab 5: Emergency Numbers & Real-Time Call Dispatch -->
+          <div class="tab-content" id="tab-emergency">
+            <div class="drawer-section emergency-drawer-section">
+              <div class="section-title-row">
+                <h3 class="section-title">🚨 Emergency Dispatch Numbers</h3>
+                <span class="region-badge-pill emg-pill" id="sb-emg-count-badge">ARMED</span>
+              </div>
+              <p class="section-desc">
+                Configure emergency mobile numbers by country. When an Extreme fire (FRP &gt; 250 MW) is detected, an automated VoIP call &amp; real-time satellite report are dispatched immediately:
+              </p>
+
+              <!-- In-Dashboard Country & Mobile Input Form -->
+              <div class="sidebar-emg-form-card">
+                <div class="sb-emg-field">
+                  <label for="sb-emg-country-select" class="sb-emg-label">🌍 Select Country:</label>
+                  <select id="sb-emg-country-select" class="sidebar-region-select sb-emg-select">
+                    <!-- Populated dynamically via JS -->
+                  </select>
+                </div>
+
+                <div class="sb-emg-field">
+                  <label for="sb-emg-phone-input" class="sb-emg-label">📱 Mobile / Emergency Number (Indian System):</label>
+                  <input type="tel" id="sb-emg-phone-input" class="sidebar-emg-input" placeholder="e.g. 9876543210, +91 98765 43210, or 112 / 101" autocomplete="tel" />
+                  <span class="sb-emg-hint">🇮🇳 Indian System: 10-digit mobile (+91 XXXXX XXXXX), 112 (ERSS), 101 (Fire)</span>
+                </div>
+
+                <button id="sb-btn-save-emergency" class="btn-firms-action btn-save-emg sb-emg-submit">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                  <span>Save Emergency Number</span>
+                </button>
+
+                <div id="sb-emg-form-status" class="emg-form-status"></div>
+              </div>
+
+              <!-- Active Registered Contacts in Sidebar -->
+              <div class="sb-emg-registry-card">
+                <div class="sb-emg-reg-header">
+                  <h4 class="sb-emg-reg-title">Configured Numbers (<span id="sb-emg-table-count">0</span>)</h4>
+                  <span class="emg-auto-badge">⚡ FRP &gt; 250 MW</span>
+                </div>
+
+                <div class="sb-emg-contacts-list" id="sb-emg-contacts-list">
+                  <!-- Dynamic contact cards populated via JS -->
+                </div>
+              </div>
+
+              <!-- Test Call Button in Sidebar -->
+              <div class="sb-emg-actions-box">
+                <button id="sb-btn-trigger-demo-dispatch" class="btn-firms-action btn-emg-test w-full" title="Simulate Extreme Condition Fire Detection and Test Call Dispatch">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                  <span>Test Emergency Call &amp; Report</span>
+                </button>
+                <button id="sb-btn-trigger-sudden-shift" class="btn-firms-action btn-sudden-shift w-full" title="Test Emergency Call for Sudden Fire Prediction Escalation">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                  <span>⚡ Test Sudden Shift Call</span>
+                </button>
+              </div>
+
+              <div class="emg-protocol-box mini">
+                <div class="proto-icon">ℹ️</div>
+                <div class="proto-text">
+                  <strong>Dispatch Protocol:</strong> When NOAA-21 satellite or the AI engine records fire intensity over 250 MW, the system automatically dials this country's registered number with synthesized voice alerts and sends the real-time detection report.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Floating NASA FIRMS Detection Inspector Card (Click / Hover) -->
+      <article class="firms-inspector-hud" id="cluster-inspector-card">
+        <div class="hud-top">
+          <span class="hud-badge-tag" id="hud-id">DETECTION NRT-01</span>
+          <span class="hud-risk-badge extreme" id="hud-risk">EXTREME FRP</span>
+        </div>
+        <div class="hud-title-with-flame">
+          <div class="hud-mini-flame" aria-hidden="true">
+            <span class="flame-spark-glow"></span>
+            <span class="flame-tongue-hud">🔥</span>
+          </div>
+          <h2 class="hud-feature-title" id="hud-name">Active Fire Anomaly Pixel</h2>
+        </div>
+        <!-- Real-Time Detection / Prediction Geographic Location & Coordinates -->
+        <div class="hud-location-strip" id="hud-location-strip">
+          <div class="hud-loc-item">
+            <span class="hud-loc-icon">🔥</span>
+            <strong class="hud-loc-name-val" id="hud-location-name">🔥 Feather River Canyon, Sierra Nevada</strong>
+          </div>
+          <div class="hud-coord-item">
+            <span class="hud-coord-icon">🌐</span>
+            <span class="hud-coord-val" id="hud-coordinates">39.8600° N, 121.4200° W</span>
+          </div>
+        </div>
+        <div class="hud-telemetry-grid">
+          <div class="hud-cell">
+            <span class="cell-label">Satellite / Sensor</span>
+            <span class="cell-val highlight" id="hud-satellite">NOAA-21 / VIIRS</span>
+          </div>
+          <div class="hud-cell">
+            <span class="cell-label">Radiative Power</span>
+            <span class="cell-val red bold" id="hud-frp">48.7 MW</span>
+          </div>
+          <div class="hud-cell">
+            <span class="cell-label">Brightness (I4)</span>
+            <span class="cell-val orange" id="hud-bright">319.8 K</span>
+          </div>
+          <div class="hud-cell">
+            <span class="cell-label">Dead Fuel Moisture</span>
+            <span class="cell-val cyan" id="hud-fuel">5.1%</span>
+          </div>
+          <div class="hud-cell">
+            <span class="cell-label">Terrain Slope</span>
+            <span class="cell-val" id="hud-slope">18.2&deg; (Chimney)</span>
+          </div>
+          <div class="hud-cell">
+            <span class="cell-label">Active Pixels</span>
+            <span class="cell-val" id="hud-detections">39 Pixels</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Autonomous AI Wildfire Prediction Agent Console (Copernicus + NASA + Physics) -->
+      <article class="ai-predictive-agent-card" id="ai-predictive-agent-card">
+        <div class="agent-card-header" id="agent-card-header-bar">
+          <div class="agent-title-row">
+            <span class="agent-pulse-icon">🤖</span>
+            <div>
+              <h3 class="agent-title">Copernicus &amp; NASA Prediction Agent</h3>
+              <span class="agent-subtitle">Satellite History &bull; Clouds &bull; Oxygen (pO2) &bull; Vegetation</span>
+            </div>
+          </div>
+          <div class="agent-header-controls">
+            <button id="agent-card-toggle" class="btn-agent-toggle" title="Collapse / Expand Agent Console">▼</button>
+            <button id="btn-agent-close" class="agent-close-btn" title="Close Agent Console">✕</button>
+          </div>
+        </div>
+
+        <div class="agent-card-body" id="agent-card-body">
+          <!-- Active Target Country Pill -->
+          <div class="agent-country-focus-bar">
+            <span class="focus-label">FOCUS COUNTRY:</span>
+            <strong class="focus-country-name" id="agent-focus-country">United States (USA)</strong>
+            <span class="focus-status-badge critical" id="agent-risk-badge">CRITICAL RISK</span>
+          </div>
+
+          <!-- Multi-Source Telemetry Gauges (Satellite, Clouds, Oxygen, Vegetation) -->
+          <div class="agent-telemetry-strip">
+            <div class="agent-tel-cell" title="Infrared/SWIR cloud penetration factor">
+              <span class="tel-lbl">☁️ CLOUDS</span>
+              <strong class="tel-val cyan" id="agent-cloud-factor">1.38x</strong>
+              <span class="tel-sub" id="agent-cloud-sub">Through Cloud</span>
+            </div>
+            <div class="agent-tel-cell" title="Barometric Oxygen Partial Pressure (pO2)">
+              <span class="tel-lbl">⛰️ OXYGEN</span>
+              <strong class="tel-val green" id="agent-oxygen-val">20.4 kPa</strong>
+              <span class="tel-sub">Accelerant</span>
+            </div>
+            <div class="agent-tel-cell" title="Copernicus Sentinel-2 Vegetation Greenness & Fuel Moisture">
+              <span class="tel-lbl">🌲 VEGETATION</span>
+              <strong class="tel-val orange" id="agent-veg-val">0.24 NDVI</strong>
+              <span class="tel-sub" id="agent-fuel-sub">Cured Fuel</span>
+            </div>
+            <div class="agent-tel-cell" title="Observed Active Fire Radiative Momentum">
+              <span class="tel-lbl">🛰️ SATELLITE</span>
+              <strong class="tel-val red" id="agent-fire-count">35 Live</strong>
+              <span class="tel-sub">NOAA-21</span>
+            </div>
+          </div>
+
+          <!-- Sudden Prediction Shift Alert Banner (Compared to Stored Baseline) -->
+          <div class="agent-sudden-shift-banner" id="agent-sudden-shift-banner">
+            <div class="shift-banner-top">
+              <span class="shift-pulse-icon">⚡</span>
+              <strong class="shift-title">SUDDEN PREDICTION SHIFT DETECTED</strong>
+              <span class="shift-delta-badge" id="agent-shift-delta">+32.1% RISK SHIFT</span>
+            </div>
+            <div class="shift-comparison-row">
+              <div class="shift-col">
+                <span class="shift-label">Stored Baseline:</span>
+                <span class="shift-val" id="agent-shift-prev">52.4% Risk &bull; 16 Pixels</span>
+              </div>
+              <div class="shift-arrow">&rarr;</div>
+              <div class="shift-col">
+                <span class="shift-label">Current Forecast:</span>
+                <span class="shift-val active" id="agent-shift-curr">84.5% Risk &bull; 38 Pixels</span>
+              </div>
+            </div>
+            <div class="shift-call-row">
+              <span class="shift-target-badge" id="agent-shift-target">🚨 Respected Emergency Number Dispatched</span>
+              <button id="btn-agent-call-respected" class="btn-shift-call" title="Call Respected Emergency Number for this Country">
+                📞 Call Respected Emergency Number
+              </button>
+            </div>
+          </div>
+
+          <!-- Predicted Outbreak Focus Card -->
+          <div class="agent-prediction-focus-box">
+            <div class="pred-focus-top">
+              <span class="pulse-fire-mini">🔥</span>
+              <span class="focus-tag-title">PREDICTED OUTBREAK TARGET:</span>
+              <span class="focus-risk-pill" id="agent-pred-risk-pill">94.2% PROBABILITY</span>
+            </div>
+            <h4 class="pred-focus-location" id="agent-target-name">Feather River Canyon Spread Zone, California</h4>
+            <div class="pred-focus-coords-bar">
+              <span class="coord-tag">🌐 COORDINATES:</span>
+              <strong class="coord-val-highlight" id="agent-target-coords">39.8600° N, 121.4200° W</strong>
+            </div>
+            <div class="pred-focus-meta">
+              <span>Projected Spread: <b id="agent-target-acres">4,280 est. acres</b></span>
+              <span>Vector: <b id="agent-target-vector">24 km/h NE Downwind</b></span>
+            </div>
+            <p class="agent-reasoning-text" id="agent-reasoning-text">
+              Synthesizing historical fire recurrence with satellite thermal passes through cloud decks. High barometric oxygen levels (20.4 kPa) in foothill canyon chimneys combine with critically cured vegetation (NDVI: 0.24) to create conditions for rapid flame front propagation.
+            </p>
+          </div>
+
+          <!-- Autonomous Action Buttons -->
+          <div class="agent-action-buttons">
+            <button id="btn-agent-predict-country" class="btn-agent-act primary" title="Run Full Multi-Factor Prediction for Selected Country">
+              <span>⚡ Predict Country</span>
+            </button>
+            <button id="btn-agent-cloud-scan" class="btn-agent-act" title="Scan Fire Fronts Through Dense Clouds">
+              <span>☁️ Cloud Scan</span>
+            </button>
+            <button id="btn-agent-oxygen-calc" class="btn-agent-act" title="Calculate Oxygen Combustion Acceleration">
+              <span>⛰️ Oxygen Model</span>
+            </button>
+            <button id="btn-agent-fly-target" class="btn-agent-act highlight" title="Fly Map to Predicted Coordinates">
+              <span>📍 Focus Map</span>
+            </button>
+          </div>
+
+          <!-- Interactive Natural Language Agent Chat Query -->
+          <div class="agent-chat-input-row">
+            <input type="text" id="agent-prompt-input" class="agent-chat-input" placeholder="Ask Agent (e.g. 'Predict fire for Australia', 'Impact of clouds')..." />
+            <button id="btn-agent-prompt-send" class="btn-agent-send" title="Send question to Predictive Agent">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </button>
+          </div>
+        </div>
+      </article>
+
+      <!-- Dedicated In-Dashboard Emergency Numbers & Automated Call Dispatch Console -->
+      <article class="dashboard-emergency-card" id="dashboard-emergency-card">
+        <div class="agent-card-header emg-card-header" id="dashboard-emg-header-bar">
+          <div class="agent-title-row">
+            <span class="emergency-beacon-dot"></span>
+            <div>
+              <h3 class="agent-title">🚨 Emergency Numbers &amp; Call Dispatch</h3>
+              <span class="agent-subtitle">Country-Specific Responder Registry &bull; FRP &gt; 250 MW Alert</span>
+            </div>
+          </div>
+          <div class="agent-header-controls">
+            <button id="btn-emg-card-toggle" class="btn-agent-toggle" title="Collapse / Expand Emergency Console">▼</button>
+            <button id="btn-emg-card-close" class="agent-close-btn" title="Close Emergency Card">✕</button>
+          </div>
+        </div>
+
+        <div class="agent-card-body" id="dashboard-emg-card-body">
+          <!-- Active Target Country Call Recipient Status Pill -->
+          <div class="agent-country-focus-bar emg-focus-bar">
+            <span class="focus-label">ACTIVE DESTINATION:</span>
+            <strong class="focus-country-name" id="dash-emg-target-country">United States (USA)</strong>
+            <span class="focus-status-badge armed" id="dash-emg-status-badge">ARMED FOR DISPATCH</span>
+          </div>
+
+          <!-- Direct Input in Dashboard: (Country, Mobile Number) -->
+          <div class="dash-emg-input-grid">
+            <div class="dash-emg-field">
+              <label for="dash-emg-country-select" class="dash-emg-label">Country:</label>
+              <select id="dash-emg-country-select" class="dash-emg-select">
+                <!-- Populated dynamically via JS -->
+              </select>
+            </div>
+
+            <div class="dash-emg-field">
+              <label for="dash-emg-phone-input" class="dash-emg-label">Mobile (Indian System):</label>
+              <input type="tel" id="dash-emg-phone-input" class="dash-emg-input" placeholder="+91 98765 43210 or 112" autocomplete="tel" title="Enter 10-digit Indian Mobile (+91) or Emergency Shortcode (112, 101)" />
+            </div>
+
+            <button id="dash-btn-save-emergency" class="btn-dash-emg-save" title="Save Emergency Contact Pair">
+              <span>+ Save</span>
+            </button>
+          </div>
+          <div class="dash-emg-subhint">🇮🇳 Auto-formats 10 digits as +91 XXXXX XXXXX &bull; 112 ERSS &bull; 101 Fire</div>
+          <div id="dash-emg-form-status" class="emg-form-status"></div>
+
+          <!-- Active Registered Contacts List in Dashboard -->
+          <div class="dash-emg-contacts-wrap">
+            <div class="dash-emg-contacts-header">
+              <span class="sub-title">Registered Country Emergency Numbers:</span>
+              <span class="badge-mini" id="dash-emg-table-count">1</span>
+            </div>
+            <div class="dash-emg-contacts-list" id="dash-emg-contacts-list">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+          <!-- Direct Test Dispatch Action -->
+          <div class="dash-emg-actions">
+            <button id="dash-btn-trigger-demo-dispatch" class="btn-firms-action btn-emg-test w-full" title="Test Automated Emergency VoIP Call & Fire Detection Report">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              <span>Test Call &amp; Transmit Fire Report</span>
+            </button>
+            <button id="dash-btn-trigger-sudden-shift" class="btn-firms-action btn-sudden-shift w-full" title="Trigger Emergency Call for Sudden Fire Prediction Escalation">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              <span>⚡ Test Sudden Shift Call</span>
+            </button>
+          </div>
+        </div>
+      </article>
+
+      <!-- Bottom Collapsible Prediction & Telemetry Analytics Drawer -->
+      <section class="firms-bottom-drawer" id="firms-bottom-drawer">
+        <!-- Drawer Drag / Toggle Bar -->
+        <div class="drawer-header-bar" id="drawer-toggle-btn">
+          <div class="drawer-toggle-title">
+            <span class="drawer-chevron" id="drawer-chevron">&#9650;</span>
+            <span class="drawer-main-title">FIRMS AI Fire Analytics &amp; Next-Day Prediction</span>
+            <span class="drawer-pill-badge">Physics-Informed ML</span>
+          </div>
+
+          <!-- Prediction Target Location & Coordinates Pill (Header Summary) -->
+          <div class="drawer-target-loc-pill" id="drawer-target-loc-pill" title="Prediction Target Location &amp; Coordinates">
+            <span class="loc-pin-pulse">🔥</span>
+            <div class="loc-pill-info">
+              <span class="loc-pill-label">🔥 PREDICTION LOCATION:</span>
+              <strong class="loc-pill-name" id="drawer-loc-name">🔥 Feather River Canyon, Sierra Nevada Foothills</strong>
+            </div>
+            <div class="loc-pill-coords" id="drawer-loc-coords">
+              39.8600° N, 121.4200° W
+            </div>
+          </div>
+
+          <!-- Quick Telemetry Chips (Always visible) -->
+          <div class="drawer-quick-chips">
+            <div class="chip">
+              <span class="c-lbl">TOMORROW (t+24h):</span>
+              <strong class="c-val cyan" id="kpi-forecast-val">48</strong>
+              <span class="c-sub" id="kpi-forecast-ci">&plusmn; 12</span>
+            </div>
+            <div class="chip">
+              <span class="c-lbl">YESTERDAY:</span>
+              <strong class="c-val" id="kpi-yesterday-val">62</strong>
+            </div>
+            <div class="chip">
+              <span class="c-lbl">MASE:</span>
+              <strong class="c-val green" id="kpi-mase">0.359</strong>
+            </div>
+            <div class="chip">
+              <span class="c-lbl">ACCURACY:</span>
+              <strong class="c-val green" id="kpi-error-reduction">+64.1% Win</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Drawer Expandable Content Body -->
+        <div class="drawer-content-body">
+          <div class="analytics-split-layout">
+
+            <!-- Column 1: Real-Time Fire Representation Chart -->
+            <div class="analytics-col chart-col">
+              <div class="col-header">
+                <div class="col-title-group">
+                  <h3 class="col-title">Real-Time Fire Representation &amp; Multi-Day Hotspot Trend</h3>
+                  <p class="col-subtitle">Live Fire Radiative Power (MW) and Thermal Radiance (K) from NOAA-21 VIIRS 375m.</p>
+                </div>
+                <div class="chart-mode-toggles">
+                  <button class="mode-btn active" id="btn-chart-mode-live">Live Satellite Telemetry</button>
+                  <button class="mode-btn" id="btn-chart-mode-ts">14-Day Forecast</button>
+                </div>
+              </div>
+
+              <div class="canvas-container">
+                <canvas id="forecast-chart"></canvas>
+              </div>
+
+              <div class="chart-footer-meta">
+                <div class="swatch-group">
+                  <span class="line-swatch fire-red"></span>
+                  <span>Fire Radiative Power (FRP MW)</span>
+                </div>
+                <div class="swatch-group">
+                  <span class="line-swatch bright-yellow"></span>
+                  <span>Thermal Radiance (Kelvin)</span>
+                </div>
+                <div class="swatch-group">
+                  <span class="line-swatch dashed-orange"></span>
+                  <span>Persistence Baseline</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Column 2: ML Feature Importance & Scenario Simulator -->
+            <div class="analytics-col simulator-col">
+              <div class="col-header">
+                <h3 class="col-title">Physics-Informed Environmental Simulator</h3>
+                <p class="col-subtitle">Simulate next-day active-fire risk across atmospheric &amp; fuel parameters.</p>
+              </div>
+
+              <!-- Dedicated Prediction Target Location & Zone Focus Box -->
+              <div class="prediction-location-box" id="prediction-location-box">
+                <div class="pred-loc-header">
+                  <div class="pred-loc-tag">
+                    <span class="pred-loc-dot"></span>
+                    <span class="pred-loc-lbl">🔥 AI PREDICTION TARGET LOCATION</span>
+                  </div>
+                  <span class="pred-cluster-badge" id="pred-loc-cluster-tag">🔥 CLUSTER CL-01</span>
+                </div>
+
+                <div class="pred-loc-main-row">
+                  <div class="pred-loc-title-wrap">
+                    <span class="loc-marker-icon" style="filter: drop-shadow(0 0 6px #FF5252);">🔥</span>
+                    <div class="loc-details-stack">
+                      <h4 class="pred-location-name" id="pred-loc-name">🔥 Feather River Canyon, Sierra Nevada Foothills</h4>
+                      <div class="pred-coordinates-pill">
+                        <span class="coord-icon">🌐</span>
+                        <span class="coord-label">COORDINATES:</span>
+                        <strong class="coord-val" id="pred-loc-coords">39.8600° N, 121.4200° W</strong>
+                        <span class="coord-alt-tag" id="pred-loc-elevation">Elev: 840m (Chimney Ridge)</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Interactive Zone Selection Dropdown -->
+                  <div class="pred-zone-picker">
+                    <label for="pred-zone-select" class="zone-picker-lbl">Switch Forecast Zone:</label>
+                    <select id="pred-zone-select" class="pred-zone-select">
+                      <option value="CL-01" selected>🔥 CL-01: Feather River Canyon (39.8600° N, 121.4200° W)</option>
+                      <option value="CL-02">🔥 CL-02: Yuba Ridge Basin (39.3800° N, 121.0500° W)</option>
+                      <option value="CL-03">🔥 CL-03: Clear Creek Foothills (39.2100° N, 121.2800° W)</option>
+                      <option value="CL-04">🔥 CL-04: Plumas Escarpment (40.0500° N, 120.9100° W)</option>
+                      <option value="CL-05">🔥 CL-05: Oroville Valley Margin (39.5200° N, 121.5500° W)</option>
+                      <option value="REGION">🔥 Regional Center: Sierra Nevada Basin (39.5000° N, 121.2000° W)</option>
+                      <option value="VIEWPORT">🛰️ Live Viewport Center (Dynamic Coordinates)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Interactive Sliders -->
+              <div class="sim-controls-grid">
+                <div class="sim-control">
+                  <div class="sim-label-row">
+                    <span>Dead Fuel Moisture (FDFM)</span>
+                    <strong class="cyan" id="sim-fuel-val">5.0%</strong>
+                  </div>
+                  <input type="range" id="sim-fuel" min="2.0" max="20.0" step="0.5" value="5.0">
+                </div>
+
+                <div class="sim-control">
+                  <div class="sim-label-row">
+                    <span>Relative Humidity (RH)</span>
+                    <strong class="cyan" id="sim-rh-val">18%</strong>
+                  </div>
+                  <input type="range" id="sim-rh" min="5" max="80" step="1" value="18">
+                </div>
+
+                <div class="sim-control">
+                  <div class="sim-label-row">
+                    <span>2m Air Temperature</span>
+                    <strong class="cyan" id="sim-temp-val">34°C</strong>
+                  </div>
+                  <input type="range" id="sim-temp" min="10" max="48" step="1" value="34">
+                </div>
+
+                <div class="sim-control">
+                  <div class="sim-label-row">
+                    <span>SRTM Terrain Slope</span>
+                    <strong class="cyan" id="sim-slope-val">22°</strong>
+                  </div>
+                  <input type="range" id="sim-slope" min="0" max="45" step="1" value="22">
+                </div>
+
+                <div class="sim-control">
+                  <div class="sim-label-row">
+                    <span>GPM Rainfall Accumulation</span>
+                    <strong class="cyan" id="sim-rain-val">0.0 mm</strong>
+                  </div>
+                  <input type="range" id="sim-rain" min="0" max="50" step="0.5" value="0.0">
+                </div>
+              </div>
+
+              <!-- Simulator Prediction Result Pill with Animated Fire Flame -->
+              <div class="sim-result-box">
+                <!-- Location Name and Coordinates Bar in Prediction Result -->
+                <div class="sim-prediction-geo-tag">
+                  <span class="geo-tag-label">🔥 Forecast Location:</span>
+                  <strong class="geo-tag-name" id="sim-geo-name">🔥 Feather River Canyon</strong>
+                  <span class="geo-tag-coords" id="sim-geo-coords">(39.8600° N, 121.4200° W)</span>
+                </div>
+
+                <!-- Dynamic Fire Animation Display Widget -->
+                <div class="sim-fire-animation-widget" id="sim-fire-widget">
+                  <div class="sim-flame-container" id="sim-flame-container">
+                    <div class="flame-aura" id="sim-flame-aura"></div>
+                    <div class="flame-body-main"></div>
+                    <div class="flame-body-inner"></div>
+                    <div class="flame-body-core"></div>
+                    <div class="flame-spark s1"></div>
+                    <div class="flame-spark s2"></div>
+                    <div class="flame-spark s3"></div>
+                  </div>
+                  <div class="sim-flame-telemetry">
+                    <span class="flame-intensity-label">FIRE SPREAD FLAME:</span>
+                    <strong class="flame-intensity-val" id="sim-flame-intensity-val">Extreme Burning</strong>
+                  </div>
+                </div>
+
+                <div class="sim-result-metric">
+                  <span class="sim-result-label">Predicted Next-Day Active Pixels:</span>
+                  <span class="sim-result-val" id="sim-result-val">52</span>
+                </div>
+                <div class="sim-result-actions">
+                  <span class="sim-risk-badge extreme" id="sim-risk-badge">Extreme Spread</span>
+                  <button id="sim-reset-btn" class="btn-subtle-reset">Reset to Live</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Column 3: Model Benchmark Verification Table -->
+            <div class="analytics-col benchmark-col">
+              <div class="col-header">
+                <h3 class="col-title">Evaluation Benchmark</h3>
+                <span class="badge-success" id="benchmark-status-badge">BASELINE BEATEN</span>
+              </div>
+
+              <div class="benchmark-table-wrapper">
+                <table class="benchmark-table">
+                  <thead>
+                    <tr>
+                      <th>Forecasting Methodology</th>
+                      <th class="num">MAE</th>
+                      <th class="num">RMSE</th>
+                      <th class="num">MASE</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>Persistence Baseline (Y<sub>t-1</sub>)</strong></td>
+                      <td class="num" id="table-persist-mae">56.33</td>
+                      <td class="num" id="table-persist-rmse">84.12</td>
+                      <td class="num">1.000</td>
+                    </tr>
+                    <tr>
+                      <td><strong>7-Day Moving Average</strong></td>
+                      <td class="num" id="table-ma7-mae">66.84</td>
+                      <td class="num" id="table-ma7-rmse">98.45</td>
+                      <td class="num">1.187</td>
+                    </tr>
+                    <tr class="highlight-row">
+                      <td><strong>Physics-Informed Gradient Boosting</strong></td>
+                      <td class="num bold cyan" id="table-model-mae">20.25</td>
+                      <td class="num bold cyan" id="table-model-rmse">30.83</td>
+                      <td class="num bold green" id="table-model-mase">0.359</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Top Feature Drivers Bar Chart -->
+              <div class="feature-importance-section">
+                <h4 class="fi-title">Key Physics &amp; Satellite Drivers</h4>
+                <div class="feature-bars" id="feature-bars-container"></div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Bottom Full-Stack Environment Integration Ribbon -->
+          <footer class="system-environment-bar">
+            <div class="env-item">
+              <span class="env-label">FULL-STACK STATUS:</span>
+              <span id="footer-backend-status" class="env-val cyan"><span class="status-dot"></span> Connecting...</span>
+            </div>
+            <div class="env-item">
+              <span class="env-label">PYTHON RUNTIME:</span>
+              <span id="footer-python-runtime" class="env-val">venv (Python 3.13)</span>
+            </div>
+            <div class="env-item">
+              <span class="env-label">PIPELINE ENGINE:</span>
+              <span id="footer-pipeline-engine" class="env-val">model_pipeline.py (NumPy Engine)</span>
+            </div>
+            <div class="env-item">
+              <span class="env-label">ACTIVE SENSOR:</span>
+              <span id="footer-active-sensor" class="env-val highlight">NOAA-21 / VIIRS 375m</span>
+            </div>
+            <div class="env-item actions">
+              <button id="footer-retrain-btn" class="btn-retrain" style="padding: 4px 10px; font-size: 11px;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                <span>Retrain Pipeline</span>
+              </button>
+            </div>
+          </footer>
+
+          <!-- Hidden Compatibility Elements for script binding -->
+          <div style="display: none;">
+            <span id="kpi-delta-val"></span>
+            <span id="kpi-model-mae"></span>
+            <span id="kpi-baseline-mae"></span>
+            <span id="kpi-fuel-badge"></span>
+            <span id="kpi-fuel-val"></span>
+            <span id="kpi-ndvi-val"></span>
+            <span id="kpi-cloud-val"></span>
+            <span id="kpi-po2-val"></span>
+            <span id="current-sensor-name">NOAA-21 / VIIRS 375m</span>
+            <span id="hud-bright-val">319.8</span>
+          </div>
+
+        </div>
+      </section>
+
+    </main>
+
+  </div>
+
+  <!-- NASA Scientist Methodology & Disclaimers Native Dialog Modal -->
+  <dialog id="scientist-dialog" class="scientist-modal">
+    <div class="modal-surface">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <span class="nasa-badge">NASA SCIENTIFIC BRIEFING</span>
+          <h2>Methodology, Uncertainty &amp; Data Definitions</h2>
+        </div>
+        <button id="close-modal-btn" class="btn-close" aria-label="Close Modal">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <article class="doc-section">
+          <h3>1. Active Fire Detection vs. Confirmed Wildfire Ground Truth</h3>
+          <p>
+            A common point of confusion is treating a satellite "hotspot" as a confirmed wildfire perimeter or burned acreage.
+            <strong>A satellite detection is a thermal anomaly:</strong> one 375m (VIIRS) or 1km (MODIS) pixel where mid-infrared radiation exceeds background threshold.
+            A single 5,000-acre wildfire can trigger 60 pixels, while an industrial flare or prescribed agricultural burn triggers 1 pixel. Our model forecasts <em>satellite observation pixel counts</em>, not wildfire perimeters.
+          </p>
+        </article>
+
+        <article class="doc-section">
+          <h3>2. Cloud &amp; Smoke Obscuration (The "Invisible Fire" Phenomenon)</h3>
+          <p>
+            Thermal sensors operate in the 3.9 &mu;m and 11 &mu;m bands. Clouds and dense pyrocumulus smoke absorb and scatter thermal radiation. 
+            When heavy cloud cover occurs, observed hotspot counts can abruptly drop to zero even if smoldering continues under canopy.
+            To account for this, the model incorporates the <strong>MODIS/VIIRS Cloud Fraction</strong> as a feature and adjusts forecast confidence accordingly.
+          </p>
+        </article>
+
+        <article class="doc-section">
+          <h3>3. Physics-Informed Gradient Boosting Engine</h3>
+          <p>
+            Forecasting next-day active-fire activity involves non-linear interactions across:
+          </p>
+          <ul>
+            <li><strong>Dead Fuel Moisture (FDFM %):</strong> Exponential ignition probability threshold below 6.5%.</li>
+            <li><strong>Atmospheric Vapour Pressure Deficit:</strong> Calculated from 2m Temperature and Relative Humidity.</li>
+            <li><strong>SRTM Topographic Slope:</strong> Chimney convective acceleration where fire spreads up to 4&times; faster uphill.</li>
+            <li><strong>Barometric Oxygen Partial Pressure (pO₂):</strong> Derived from altitude via SRTM Digital Elevation Model.</li>
+          </ul>
+        </article>
+      </div>
+
+      <div class="modal-footer">
+        <button id="dismiss-modal-btn" class="btn-primary">Acknowledge &amp; Return to Map</button>
+      </div>
+    </div>
+  </dialog>
+
+
+
+  <!-- Live NASA FIRMS API Key Configuration Dialog -->
+  <dialog id="api-key-dialog" class="scientist-modal">
+    <div class="modal-surface">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <span class="nasa-badge">NASA FIRMS LIVE TELEMETRY</span>
+          <h2>Connect Real-Time Satellite Feed</h2>
+        </div>
+        <button id="close-api-dialog-btn" class="btn-close" aria-label="Close Modal">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <article class="doc-section">
+          <h3>1. Enter NASA FIRMS MAP_KEY</h3>
+          <p>
+            Enter your free 32-character key from <a href="https://firms.modaps.eosdis.nasa.gov/api/map_key/" target="_blank" style="color: var(--cyan-neon); text-decoration: underline;">NASA FIRMS Map Key Request</a>. 
+            The key is synchronized with your backend environment and used to query real-time active fire passes.
+          </p>
+          <div class="api-key-input-group">
+            <input type="text" id="api-key-input" placeholder="e.g. 5d9e22b9bfe79cd7a440db7163192ffc" spellcheck="false" autocomplete="off" class="api-key-text-input">
+            <button id="save-api-key-btn" class="btn-primary">Connect Live Feed</button>
+          </div>
+          <div id="api-status-message" class="api-status-msg"></div>
+        </article>
+
+        <article class="doc-section">
+          <h3>2. Select Real-Time Satellite Sensor</h3>
+          <div class="radio-sensor-group">
+            <label class="radio-label">
+              <input type="radio" name="firms-sensor" value="VIIRS_NOAA21_NRT" checked>
+              <span><strong>VIIRS NOAA-21 (375m)</strong> — Primary Flagship JPSS-2 next-gen sensor</span>
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="firms-sensor" value="VIIRS_NOAA20_NRT">
+              <span><strong>VIIRS NOAA-20 (375m)</strong> — High resolution JPSS-1 real-time passes</span>
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="firms-sensor" value="VIIRS_SNPP_NRT">
+              <span><strong>VIIRS Suomi-NPP (375m)</strong> — Secondary afternoon orbit</span>
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="firms-sensor" value="MODIS_NRT">
+              <span><strong>MODIS Terra/Aqua (1km)</strong> — Long-term baseline sensor</span>
+            </label>
+          </div>
+        </article>
+
+        <article class="doc-section">
+          <h3>3. Target Region Bounding Box</h3>
+          <select id="region-preset-select" class="preset-select">
+            <option value="-124.5,32.5,-114.0,42.0" selected>California &amp; Sierra Nevada Foothills (-124.5, 32.5, -114.0, 42.0)</option>
+            <option value="-125.0,30.0,-100.0,49.0">Western United States (-125.0, 30.0, -100.0, 49.0)</option>
+            <option value="68.0,8.0,97.0,37.0">South Asia &amp; Indian Ocean (68 to 97 E, 8 to 37 N)</option>
+            <option value="-10.0,35.0,30.0,45.0">Mediterranean Basin (-10.0, 35.0, 30.0, 45.0)</option>
+            <option value="112.0,-44.0,154.0,-10.0">Australia (-44 to -10 S, 112 to 154 E)</option>
+            <option value="-80.0,-20.0,-45.0,5.0">Amazon Basin &amp; South America</option>
+          </select>
+        </article>
+      </div>
+
+      <div class="modal-footer">
+        <button id="clear-api-key-btn" class="btn-secondary" style="margin-right: auto;">Clear Saved Key</button>
+        <button id="dismiss-api-dialog-btn" class="btn-primary">Done</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Dedicated Emergency Numbers Registry Modal -->
+  <dialog id="emergency-mgmt-modal" class="firms-modal firms-emergency-modal">
+    <div class="modal-content glass-card emg-modal-card">
+      <div class="modal-header emg-header">
+        <div class="emg-header-title">
+          <span class="emg-beacon-glow">🚨</span>
+          <div>
+            <h2>Emergency Dispatch Numbers &amp; Automated Incident Reports</h2>
+            <p class="modal-subtitle">Register <code>(Country, Mobile Number)</code> pairs. Whenever an extreme fire condition is detected (FRP &gt; 250 MW), an automated emergency voice call and real-time scientific report are dispatched.</p>
+          </div>
+        </div>
+        <button id="btn-close-emergency-modal" class="close-btn" aria-label="Close Emergency Numbers Modal">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Input Pair Card -->
+        <div class="emg-input-card">
+          <h3 class="emg-input-heading">Register Emergency Mobile Contact Pair</h3>
+          <div class="emg-form-row">
+            <div class="emg-field-group">
+              <label for="emg-country-select" class="emg-label">🌍 Target Country:</label>
+              <select id="emg-country-select" class="emg-select">
+                <option value="IND" selected>🇮🇳 India</option>
+                <option value="USA">🇺🇸 United States of America</option>
+                <option value="AUS">🇦🇺 Australia</option>
+                <option value="CAN">🇨🇦 Canada</option>
+                <option value="BRA">🇧🇷 Brazil</option>
+                <option value="IDN">🇮🇩 Indonesia</option>
+                <option value="ESP">🇪🇸 Spain</option>
+                <option value="PRT">🇵🇹 Portugal</option>
+                <option value="GRC">🇬🇷 Greece</option>
+                <option value="ITA">🇮🇹 Italy</option>
+                <option value="FRA">🇫🇷 France</option>
+                <option value="CHL">🇨🇱 Chile</option>
+                <option value="ARG">🇦🇷 Argentina</option>
+                <option value="ZAF">🇿🇦 South Africa</option>
+                <option value="RUS">🇷🇺 Russian Federation</option>
+                <option value="TUR">🇹🇷 Turkey</option>
+                <option value="DEU">🇩🇪 Germany</option>
+                <option value="GBR">🇬🇧 United Kingdom</option>
+              </select>
+            </div>
+
+            <div class="emg-field-group phone-group">
+              <label for="emg-phone-input" class="emg-label">📱 Mobile / Emergency Number (Indian System):</label>
+              <input type="tel" id="emg-phone-input" class="emg-input" placeholder="e.g. 9876543210, +91 98765 43210, or 112 / 101" autocomplete="tel" />
+              <div class="emg-hint-text">🇮🇳 Indian System: 10-digit mobile (+91 XXXXX XXXXX), 112 (ERSS), 101 (Fire Service)</div>
+            </div>
+
+            <button id="btn-save-emergency-pair" class="btn-firms-action btn-save-emg">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              <span>Save Contact</span>
+            </button>
+          </div>
+          <div id="emg-form-status" class="emg-form-status"></div>
+        </div>
+
+        <!-- Registered Numbers Table -->
+        <div class="emg-registry-section">
+          <div class="emg-table-header">
+            <h3>Registered Emergency Contacts (<span id="emg-table-count">1</span>)</h3>
+            <span class="emg-auto-badge">⚡ Auto-Dispatch: Extreme Alert Armed (FRP &gt; 250 MW)</span>
+          </div>
+
+          <div class="emg-table-wrap">
+            <table class="emg-table">
+              <thead>
+                <tr>
+                  <th>Country</th>
+                  <th>Mobile Number</th>
+                  <th>Incident Trigger</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="emg-contacts-table-body">
+                <!-- Populated dynamically via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Automated Protocol Explanation -->
+        <div class="emg-protocol-box">
+          <div class="proto-icon">ℹ️</div>
+          <div class="proto-text">
+            <strong>Automated Dispatch Protocol:</strong> Whenever NOAA-21 / MODIS satellites or the Physics-Informed ML engine detect active fires exceeding the <b>Extreme Condition threshold (FRP &gt; 250 MW or Risk Level: Extreme)</b> in a registered country, an automated VoIP voice call is placed to the registered number, and the agent transmits a full real-time incident report detailing the active coordinates, fire radiative power, oxygen combustion acceleration, and fuel dryness reasons.
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button id="btn-trigger-demo-dispatch" class="btn-firms-action btn-emg-test" title="Simulate an Extreme Condition Fire Detection and Test Call Dispatch">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          <span>Test Emergency Call &amp; Report</span>
+        </button>
+        <button id="btn-trigger-sudden-shift-modal" class="btn-firms-action btn-sudden-shift" title="Test Sudden Fire Prediction Escalation Emergency Call">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          <span>⚡ Test Sudden Shift Call</span>
+        </button>
+        <button id="dismiss-emergency-modal-btn" class="btn-primary">Done</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Live Emergency Call Screen & Real-Time Incident Report Dispatch Modal -->
+  <dialog id="emergency-call-dispatch-modal" class="firms-modal firms-call-modal">
+    <div class="modal-content glass-card call-screen-card">
+      <!-- Call Banner -->
+      <div class="call-banner">
+        <div class="call-radar-waves">
+          <div class="wave wave-1"></div>
+          <div class="wave wave-2"></div>
+          <div class="wave wave-3"></div>
+          <span class="call-phone-icon">📞</span>
+        </div>
+        <div class="call-header-meta">
+          <div class="call-badge-live">🚨 ACTIVE AUTOMATED EMERGENCY CALL DISPATCH</div>
+          <h2 class="call-recipient-name" id="call-country-name">United States Emergency Response Authority</h2>
+          <div class="call-recipient-number" id="call-phone-number">+1 (555) 911-FIRE</div>
+          <div class="call-status-line">
+            <span class="pulse-call-dot"></span>
+            <span id="call-connection-status">CONNECTED • TRANSMITTING SATELLITE RADIO DISPATCH</span>
+          </div>
+        </div>
+        <button id="btn-close-call-modal" class="close-btn" aria-label="Dismiss Call">&times;</button>
+      </div>
+
+      <!-- Real-Time Report Terminal Box -->
+      <div class="call-report-body">
+        <div class="report-terminal-bar">
+          <span class="term-dot red"></span>
+          <span class="term-dot yellow"></span>
+          <span class="term-dot green"></span>
+          <span class="term-title">NASA FIRMS &amp; COPERNICUS REAL-TIME INCIDENT REPORT</span>
+          <span class="term-clock" id="call-report-time">LIVE UTC</span>
+        </div>
+        <pre class="report-terminal-content" id="call-report-text">Generating real-time emergency dispatch report...</pre>
+      </div>
+
+      <!-- Call Action Controls -->
+      <div class="call-footer-actions">
+        <button id="btn-toggle-voice" class="btn-call-action voice-toggle active" title="Toggle Synthesized Emergency Audio Voice Dispatch">
+          <span id="voice-icon">🔊</span>
+          <span id="voice-label">Voice Dispatch Active</span>
+        </button>
+        <button id="btn-copy-report" class="btn-call-action" title="Copy Real-Time Fire Detection Report to Clipboard">
+          <span>📋 Copy Report</span>
+        </button>
+        <button id="btn-download-report" class="btn-call-action" title="Download Official Incident Report File">
+          <span>📥 Download Report</span>
+        </button>
+        <button id="btn-end-call" class="btn-call-action end-call" title="Acknowledge and Conclude Emergency Transmission">
+          <span>✕ End Call</span>
+        </button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Leaflet & Chart.js CDNs -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <!-- Application Logic -->
+  <script src="app.js"></script>
+</body>
+</html>

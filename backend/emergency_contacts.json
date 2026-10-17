@@ -1,0 +1,38 @@
+[
+  {
+    "id": "EMG-01",
+    "country": "IND",
+    "country_name": "India",
+    "phone": "+91 90599 57974",
+    "created_at": "2026-10-17T00:00:00Z",
+    "status": "Armed",
+    "service": "National Disaster Response & Fire Control"
+  },
+  {
+    "id": "EMG-02",
+    "country": "IND",
+    "country_name": "India",
+    "phone": "+91 70930 78976",
+    "created_at": "2026-10-17T00:00:00Z",
+    "status": "Armed",
+    "service": "Pan-India Emergency Response Support System"
+  },
+  {
+    "id": "EMG-03",
+    "country": "IND",
+    "country_name": "India",
+    "phone": "+91 93812 18671",
+    "created_at": "2026-10-17T00:00:00Z",
+    "status": "Armed",
+    "service": "State Fire & Emergency Services"
+  },
+  {
+    "id": "EMG-04",
+    "country": "USA",
+    "country_name": "United States of America",
+    "phone": "+91 63013 85741",
+    "created_at": "2026-10-17T00:00:00Z",
+    "status": "Armed",
+    "service": "USFS Fire Dispatch"
+  }
+]

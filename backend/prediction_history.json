@@ -1,0 +1,67 @@
+{
+  "IND": {
+    "timestamp": "2026-10-16 06:00:00 UTC",
+    "location_name": "Western Ghats Corridor, India",
+    "risk_level": "MODERATE RISK",
+    "risk_probability_pct": 52.4,
+    "predicted_next_day_active_pixels": 16,
+    "projected_perimeter_acres": "1,420 est. acres",
+    "frp_mw": 42.0,
+    "coordinates": "14.2500° N, 75.3000° E",
+    "ndvi": 0.44,
+    "fuel_moisture_pct": 8.5,
+    "cloud_fraction": 0.38
+  },
+  "USA": {
+    "timestamp": "2026-10-16 06:00:00 UTC",
+    "location_name": "Sierra Nevada Foothills, United States",
+    "risk_level": "MODERATE RISK",
+    "risk_probability_pct": 55.0,
+    "predicted_next_day_active_pixels": 20,
+    "projected_perimeter_acres": "1,850 est. acres",
+    "frp_mw": 48.0,
+    "coordinates": "38.5000° N, 120.8000° W",
+    "ndvi": 0.39,
+    "fuel_moisture_pct": 7.8,
+    "cloud_fraction": 0.28
+  },
+  "AUS": {
+    "timestamp": "2026-10-16 06:00:00 UTC",
+    "location_name": "Blue Mountains Ridge, Australia",
+    "risk_level": "ELEVATED RISK",
+    "risk_probability_pct": 59.2,
+    "predicted_next_day_active_pixels": 24,
+    "projected_perimeter_acres": "2,100 est. acres",
+    "frp_mw": 52.0,
+    "coordinates": "33.7150° S, 150.3110° E",
+    "ndvi": 0.35,
+    "fuel_moisture_pct": 6.8,
+    "cloud_fraction": 0.22
+  },
+  "BRA": {
+    "timestamp": "2026-10-16 06:00:00 UTC",
+    "location_name": "Cerrado Savannah Fringe, Brazil",
+    "risk_level": "ELEVATED RISK",
+    "risk_probability_pct": 61.0,
+    "predicted_next_day_active_pixels": 28,
+    "projected_perimeter_acres": "2,600 est. acres",
+    "frp_mw": 65.0,
+    "coordinates": "14.2350° S, 51.9253° W",
+    "ndvi": 0.33,
+    "fuel_moisture_pct": 6.4,
+    "cloud_fraction": 0.30
+  },
+  "CAN": {
+    "timestamp": "2026-10-16 06:00:00 UTC",
+    "location_name": "Boreal Taiga Basin, Canada",
+    "risk_level": "LOW RISK",
+    "risk_probability_pct": 38.5,
+    "predicted_next_day_active_pixels": 12,
+    "projected_perimeter_acres": "980 est. acres",
+    "frp_mw": 26.0,
+    "coordinates": "53.7267° N, 127.6476° W",
+    "ndvi": 0.52,
+    "fuel_moisture_pct": 11.2,
+    "cloud_fraction": 0.42
+  }
+}

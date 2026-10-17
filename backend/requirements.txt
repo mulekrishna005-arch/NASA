@@ -1,0 +1,4 @@
+# NASA Environmental Hotspot Activity Forecast Pipeline Dependencies
+# Pure NumPy + Pandas engine ensures 100% cross-platform compatibility with zero DLL/AppLocker issues
+numpy>=2.0.0
+pandas>=2.2.0
