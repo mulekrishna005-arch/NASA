@@ -12,12 +12,12 @@ Connects and orchestrates:
 """
 
 import os
+import subprocess
 import sys
 import time
-import subprocess
-import webbrowser
-import urllib.request
 import urllib.error
+import urllib.request
+import webbrowser
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 BACKEND_DIR = os.path.join(ROOT_DIR, 'backend')
@@ -44,17 +44,17 @@ def verify_environment(python_exec):
     
     check_code = "import numpy, pandas; print('DEPS_OK')"
     try:
-        proc = subprocess.run([python_exec, "-c", check_code], capture_output=True, text=True)
+        proc = subprocess.run([python_exec, "-c", check_code], check=False, capture_output=True, text=True)
         if "DEPS_OK" in proc.stdout:
             print("[+] Dependencies verified: NumPy and Pandas are ready.")
             return True
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         print(f"[-] Dependency check error: {e}")
 
     # If missing, try installing
     if os.path.exists(req_file):
         print("[!] Installing missing dependencies from backend/requirements.txt...")
-        subprocess.run([python_exec, "-m", "pip", "install", "-r", req_file])
+        subprocess.run([python_exec, "-m", "pip", "install", "-r", req_file], check=False)
     return True
 
 def ensure_initial_forecast(python_exec):
@@ -65,7 +65,7 @@ def ensure_initial_forecast(python_exec):
     if not os.path.exists(backend_json) or not os.path.exists(frontend_json):
         print("[*] Generating initial forecast data & model benchmarks...")
         pipeline_script = os.path.join(BACKEND_DIR, 'model_pipeline.py')
-        subprocess.run([python_exec, pipeline_script], cwd=BACKEND_DIR)
+        subprocess.run([python_exec, pipeline_script], check=False, cwd=BACKEND_DIR)
     else:
         print("[+] Existing forecast telemetry dataset found.")
 

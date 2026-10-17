@@ -221,7 +221,7 @@ def evaluate_sudden_prediction_change(country_code: str, current_pred_data: dict
         current_prob >= 80.0
     )
 
-    now_utc_str = datetime.now(timezone.utc if 'timezone' in globals() else UTC).strftime("%Y-%m-%d %H:%M:%S UTC")
+    now_utc_str = datetime.now(timezone.utc if 'timezone' in globals() else UTC).strftime("%Y-%m-%d %H:%M:%S UTC")  # noqa: UP017
 
     sudden_details = {
         "sudden_change_detected": is_sudden_change,
@@ -280,7 +280,10 @@ def load_env_file():
                     line = line.strip()
                     if line and not line.startswith('#') and '=' in line:
                         k, v = line.split('=', 1)
-                        os.environ[k.strip()] = v.strip()
+                        key = k.strip()
+                        # Preserve system/cloud environment variables (e.g. PORT assigned by Render)
+                        if key not in os.environ:
+                            os.environ[key] = v.strip()
 
 def save_key_to_env(api_key, sensor=None, bbox=None):
     """Saves API key, sensor and bbox into both root .env and backend/.env files."""
@@ -884,7 +887,7 @@ class NASAHandler(SimpleHTTPRequestHandler):
             coords = payload.get('coordinates') or ('21.8500° N, 86.3500° E' if country_code == 'IND' else '39.8600° N, 121.4200° W')
             frp = payload.get('frp') or 318.5
             risk_level = payload.get('risk_level') or 'EXTREME'
-            reasons = payload.get('reasons') or 'Critical convective heat output exceeding 250 MW with desiccated biomass and steep chimney canyon topography.'
+            payload.get('reasons') or 'Critical convective heat output exceeding 250 MW with desiccated biomass and steep chimney canyon topography.'
 
             is_sudden_change = bool(payload.get('is_sudden_change') or payload.get('sudden_change_detected'))
             delta_prob = payload.get('delta_prob') or payload.get('delta_prob_pct')

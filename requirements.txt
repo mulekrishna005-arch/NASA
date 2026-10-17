@@ -1,0 +1,5 @@
+# NASA Environmental Hotspot Activity Forecast & Emergency Dispatch Platform
+# Dependencies for Render.com, Cloud Hosting & Local Deployment
+
+numpy>=2.0.0
+pandas>=2.2.0
