@@ -1,12 +1,7 @@
+:<<"::CMDLITERAL"
 @echo off
 title NASA Environmental Hotspot Forecast - Full Stack
 cd /d "%~dp0"
-
-echo ==================================================================
-echo        NASA Environmental Hotspot Activity Forecast System        
-echo                   Starting Full-Stack Environment                  
-echo ==================================================================
-echo.
 
 IF EXIST "venv\Scripts\python.exe" (
     set "PYTHON_EXE=venv\Scripts\python.exe"
@@ -18,9 +13,8 @@ IF EXIST "venv\Scripts\python.exe" (
 
 echo [*] Using Python interpreter: %PYTHON_EXE%
 "%PYTHON_EXE%" run.py
-
-if errorlevel 1 (
-    echo.
-    echo [!] An error occurred while running the full-stack launcher.
-    pause
-)
+exit /b %ERRORLEVEL%
+::CMDLITERAL
+#!/usr/bin/env bash
+export PYTHONUNBUFFERED=1
+python backend/server.py
